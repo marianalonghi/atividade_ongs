@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Protótipo MVP de front-end para ONG de animais — perfis de Administrador, Doador e Padrinho.">
+  <title>Patas Felizes — ONG de Animais</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#/">
+        <span class="brand-mark">PF</span>
+        <span id="ong-nome">ONG de Animais</span>
+      </a>
+      <div class="header-right">
+        <span id="perfil-badge" class="badge" hidden></span>
+        <a href="#/" id="trocar-perfil" class="link" hidden>Trocar perfil</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="wrap"></main>
+
+  <footer class="site-footer wrap">
+    Protótipo MVP — dados fictícios. Nenhum pagamento é processado.
+  </footer>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

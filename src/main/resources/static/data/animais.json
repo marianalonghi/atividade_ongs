@@ -1,0 +1,74 @@
+[
+  {
+    "id": "animal-1",
+    "nome": "Mel",
+    "especie": "Cachorro",
+    "idade": "3 anos",
+    "descricao": "Resgatada em situação de rua. Está em tratamento para uma infecção de pele e precisa de ração especial e consultas.",
+    "status": "ATIVO",
+    "meta": 1200,
+    "necessidades": ["Ração hipoalergênica (3 meses)", "Consultas dermatológicas", "Medicamentos"],
+    "padrinhoIds": ["padrinho-1"],
+    "mensalidadeSugerida": 60
+  },
+  {
+    "id": "animal-2",
+    "nome": "Thor",
+    "especie": "Gato",
+    "idade": "2 anos",
+    "descricao": "Gato resgatado de um terreno abandonado. Sociável e aguardando castração e acompanhamento veterinário.",
+    "status": "ATIVO",
+    "meta": 800,
+    "necessidades": ["Ração úmida", "Areia sanitária", "Castração"],
+    "padrinhoIds": ["padrinho-1"],
+    "mensalidadeSugerida": 80
+  },
+  {
+    "id": "animal-3",
+    "nome": "Nina",
+    "especie": "Cachorra",
+    "idade": "5 anos",
+    "descricao": "Precisa de cirurgia ortopédica na pata traseira após um acidente. Já possui parte do valor arrecadado.",
+    "status": "ATIVO",
+    "meta": 1500,
+    "necessidades": ["Cirurgia ortopédica", "Fisioterapia"],
+    "padrinhoIds": [],
+    "mensalidadeSugerida": 100
+  },
+  {
+    "id": "animal-4",
+    "nome": "Bidu",
+    "especie": "Gato",
+    "idade": "1 ano",
+    "descricao": "Filhote resgatado com a ninhada. Precisa completar o protocolo de vacinas e vermifugação.",
+    "status": "ATIVO",
+    "meta": 600,
+    "necessidades": ["Vacinas", "Vermífugo"],
+    "padrinhoIds": [],
+    "mensalidadeSugerida": 40
+  },
+  {
+    "id": "animal-5",
+    "nome": "Luna",
+    "especie": "Cadela",
+    "idade": "4 anos",
+    "descricao": "Resgatada em uma obra. Está no abrigo e precisa de ração e um espaço confortável enquanto aguarda adoção.",
+    "status": "ATIVO",
+    "meta": 2000,
+    "necessidades": ["Ração (4 meses)", "Abrigo e cama", "Banhos e tosa"],
+    "padrinhoIds": ["padrinho-1"],
+    "mensalidadeSugerida": 60
+  },
+  {
+    "id": "animal-6",
+    "nome": "Pipoca",
+    "especie": "Gato",
+    "idade": "6 anos",
+    "descricao": "Tratamento concluído com sucesso. Meta atingida e animal inativado, aguardando adoção.",
+    "status": "INATIVO",
+    "meta": 500,
+    "necessidades": ["Exames"],
+    "padrinhoIds": [],
+    "mensalidadeSugerida": 30
+  }
+]
