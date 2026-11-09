@@ -1,5 +1,9 @@
 package br.com.ongs.atividadeongs.controller;
 
+import br.com.ongs.atividadeongs.dto.AnimalRequest;
+import br.com.ongs.atividadeongs.dto.AnimalResponse;
+import br.com.ongs.atividadeongs.dto.AnimalStatusRequest;
+import br.com.ongs.atividadeongs.service.AnimalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -9,34 +13,38 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/animais")
 public class AnimalController {
 
+    private final AnimalService service;
+
+    public AnimalController(AnimalService service) {
+        this.service = service;
+    }
+
     @GetMapping
-    public ResponseEntity<List<Object>> listar() {
-        // TODO: implementar
-        return ResponseEntity.ok(List.of());
+    public ResponseEntity<List<AnimalResponse>> listar() {
+        return ResponseEntity.ok(service.listar());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Void> buscarPorId(@PathVariable Long id) {
-        // TODO: implementar
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AnimalResponse> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscar(id));
     }
 
     @PostMapping
-    public ResponseEntity<Void> criar(@RequestBody Map<String, Object> dados) {
-        // TODO: implementar
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AnimalResponse> criar(@RequestBody AnimalRequest dados) {
+        AnimalResponse criado = service.criar(dados);
+        return ResponseEntity.created(URI.create("/api/animais/" + criado.id())).body(criado);
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Void> alterarStatus(@PathVariable Long id, @RequestBody Map<String, Object> dados) {
-        // TODO: implementar
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AnimalResponse> alterarStatus(@PathVariable Long id,
+                                                        @RequestBody AnimalStatusRequest dados) {
+        return ResponseEntity.ok(service.atualizarStatus(id, dados.status()));
     }
 }
