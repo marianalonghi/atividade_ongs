@@ -1,28 +1,37 @@
 package br.com.ongs.atividadeongs.controller;
 
+import br.com.ongs.atividadeongs.dto.DoacaoRequest;
+import br.com.ongs.atividadeongs.dto.DoacaoResponse;
+import br.com.ongs.atividadeongs.service.DoacaoService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/doacoes")
 public class DoacaoController {
 
+    private final DoacaoService doacaoService;
+
+    public DoacaoController(DoacaoService doacaoService) {
+        this.doacaoService = doacaoService;
+    }
+
     @GetMapping
-    public ResponseEntity<List<Object>> listar() {
-        // TODO: implementar
-        return ResponseEntity.ok(List.of());
+    public ResponseEntity<List<DoacaoResponse>> listar() {
+        return ResponseEntity.ok(doacaoService.listar());
     }
 
     @PostMapping
-    public ResponseEntity<Void> criar(@RequestBody Map<String, Object> dados) {
-        // TODO: implementar
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<DoacaoResponse> criar(
+            @RequestBody DoacaoRequest dados
+    ) {
+        DoacaoResponse criada = doacaoService.criar(dados);
+
+        return ResponseEntity
+                .created(URI.create("/api/doacoes/" + criada.id()))
+                .body(criada);
     }
 }
