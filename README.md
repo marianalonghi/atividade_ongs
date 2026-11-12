@@ -5,9 +5,11 @@ Projeto desenvolvido em grupo na Residência Full Stack 5.0.
 Aplicação web para auxiliar ONGs, abrigos e protetores independentes na gestão de animais,
 necessidades, padrinhos e doações.
 
-> **Status atual:** o back-end **ainda não foi implementado**. Existe apenas o bootstrap do
-> Spring Boot e um front-end estático completo, que roda com **dados mockados** para simular a
-> futura API. Esta é uma entrega de MVP para validar as telas e os fluxos dos três perfis.
+> **Status atual:** o back-end já possui **Spring Data JPA + Hibernate + PostgreSQL**
+> configurados, modelos mapeados, repositórios e controllers de API. O front-end estático é
+> servido pela própria aplicação e **já está com os mocks desativados** (`USE_MOCK: false`).
+> Os controllers ainda são **stubs**: os endpoints existem, mas retornam respostas vazias e não
+> acessam o banco. Não há dados cadastrados nem regras de negócio implementadas no back-end.
 
 ---
 
@@ -27,7 +29,8 @@ Para simplificar o MVP:
 - não há autenticação nem autorização;
 - não há processamento real de pagamento;
 - a doação é registrada por confiança: o usuário faz o PIX e clica em "Já fiz o PIX • Marcar como doado";
-- os dados são fictícios e ficam no navegador (ver seção sobre o mock).
+- o perfil ativo fica salvo no `localStorage` do navegador;
+- o banco de desenvolvimento é criado localmente e não possui dados de exemplo.
 
 ---
 
@@ -35,8 +38,25 @@ Para simplificar o MVP:
 
 **Arquitetura adotada: monolito modular com Spring Boot + Java 21, servindo o front-end estático.**
 
-O front-end foi colocado em `src/main/resources/static/`, portanto é servido pela própria
-aplicação. Ao rodar o Spring Boot, o acesso a `http://localhost:8080` já entrega o sistema.
+O front-end está em `src/main/resources/static/`, portanto é servido pela própria aplicação.
+Ao rodar o Spring Boot, `http://localhost:8080` já entrega o sistema.
+
+Fluxo atual:
+
+```text
+Front-end (JS puro, USE_MOCK: false)
+        │
+        │ fetch /api/...
+        ▼
+Controllers REST (stubs, sem regra de negócio)
+        │
+        │ (services/DTOs ainda não implementados)
+        ▼
+Repositories Spring Data JPA (criados, ainda não usados)
+        │
+        ▼
+PostgreSQL + Hibernate
+```
 
 Essa escolha é adequada ao MVP porque:
 
@@ -47,17 +67,21 @@ Essa escolha é adequada ao MVP porque:
 - microsserviços adicionariam complexidade de rede, consistência distribuída, gateway e
   observabilidade sem benefício neste momento.
 
-Quando o back-end for implementado, a recomendação é organizá-lo em módulos por domínio
-(`animal`, `doacao`, `padrinho`, `ong`), cada um com controller, service, repository, domain e DTO.
-Se algum módulo crescer e precisar escalar isoladamente, ele pode ser extraído depois.
+---
 
-### Tecnologias
+## Tecnologias
 
-- Java 21 (target do projeto)
-- Spring Boot 4.1.2
-- Maven (com Maven Wrapper)
-- Front-end: HTML5, CSS3 e JavaScript puro (ES Modules), sem framework e sem etapa de build
-- Dados do MVP: JSON estáticos + `localStorage`
+| Tecnologia | Versão / uso |
+| --- | --- |
+| Java | 21 (target do projeto) |
+| Spring Boot | 4.1.2 |
+| Spring Web | API REST e servidor Tomcat embutido |
+| Spring Data JPA | Repositórios e abstração de persistência |
+| Hibernate ORM | 7.4.13.Final |
+| PostgreSQL | 18 (testado localmente) |
+| Driver PostgreSQL | 42.7.14 |
+| Maven | Maven Wrapper (`mvnw` / `mvnw.cmd`) |
+| Front-end | HTML5, CSS3 e JavaScript puro (ES Modules), sem framework e sem build |
 
 ---
 
@@ -65,54 +89,255 @@ Se algum módulo crescer e precisar escalar isoladamente, ele pode ser extraído
 
 ```text
 atividade_ongs/
-├── pom.xml                          # dependências (spring-boot-starter-web, test)
-├── mvnw / mvnw.cmd                  # Maven Wrapper
-├── src/
-│   ├── main/
-│   │   ├── java/com/ongs/atividade_ongs/
-│   │   │   └── AtividadeOngsApplication.java   # classe main do Spring Boot
-│   │   └── resources/
-│   │       ├── application.properties          # configurações da aplicação
-│   │       └── static/                         # FRONT-END servido pelo Spring
-│   │           ├── index.html
-│   │           ├── css/styles.css
-│   │           ├── data/                       # base mockada (simula o back-end)
-│   │           │   ├── ong.json
-│   │           │   ├── animais.json
-│   │           │   ├── doacoes.json
-│   │           │   └── usuarios.json
-│   │           └── js/
-│   │               ├── config.js               # chave de troca mock -> API real
-│   │               ├── api.js                  # única camada de acesso a dados
-│   │               ├── mock.js                 # leitura dos JSON + localStorage
-│   │               ├── state.js                # perfil ativo no navegador
-│   │               ├── app.js                  # roteador por hash
-│   │               ├── components.js           # cards, modal, toast, progresso
-│   │               ├── doacao-modal.js         # fluxo de doação via PIX
-│   │               └── views/
-│   │                   ├── perfil.js
-│   │                   ├── adm.js
-│   │                   ├── usuario.js
-│   │                   └── padrinho.js
-│   └── test/java/com/ongs/atividade_ongs/
-│       └── AtividadeOngsApplicationTests.java
-└── README.md
+├── pom.xml
+├── mvnw / mvnw.cmd
+├── README.md
+└── src/
+    ├── main/
+    │   ├── java/br/com/ongs/atividadeongs/
+    │   │   ├── AtividadeOngsApplication.java
+    │   │   ├── controller/
+    │   │   │   ├── AnimalController.java
+    │   │   │   ├── DoacaoController.java
+    │   │   │   ├── OngController.java
+    │   │   │   ├── StatusController.java
+    │   │   │   └── UsuarioController.java
+    │   │   ├── models/
+    │   │   │   ├── Animal.java
+    │   │   │   ├── Doacao.java
+    │   │   │   ├── Ong.java
+    │   │   │   ├── Usuario.java
+    │   │   │   ├── PerfilUsuario.java
+    │   │   │   ├── StatusAnimal.java
+    │   │   │   ├── StatusDoacao.java
+    │   │   │   └── TipoChavePix.java
+    │   │   └── repository/
+    │   │       ├── AnimalRepository.java
+    │   │       ├── DoacaoRepository.java
+    │   │       ├── OngRepository.java
+    │   │       └── UsuarioRepository.java
+    │   └── resources/
+    │       ├── application.properties
+    │       └── static/
+    │           ├── index.html
+    │           ├── css/styles.css
+    │           ├── data/                  # JSONs do antigo modo mock
+    │           │   ├── animais.json
+    │           │   ├── doacoes.json
+    │           │   ├── ong.json
+    │           │   └── usuarios.json
+    │           └── js/
+    │               ├── api.js
+    │               ├── app.js
+    │               ├── components.js
+    │               ├── config.js
+    │               ├── doacao-modal.js
+    │               ├── mock.js
+    │               ├── state.js
+    │               └── views/
+    │                   ├── adm.js
+    │                   ├── padrinho.js
+    │                   ├── perfil.js
+    │                   └── usuario.js
+    └── test/
+        └── java/                          # sem testes automatizados no momento
 ```
 
-### Back-end
+---
 
-Neste momento contém somente:
+## Back-end
 
-- `AtividadeOngsApplication.java`, que inicializa o Spring Boot;
-- `application.properties`, com o nome da aplicação e as configurações padrão (porta 8080);
-- a dependência `spring-boot-starter-web`, necessária para subir o Tomcat e servir os arquivos
-  estáticos do front-end.
+### Modelos JPA
 
-Não existem controllers, services, repositories, entidades ou banco de dados ainda.
+As entidades ficam em `src/main/java/br/com/ongs/atividadeongs/models/` e já estão anotadas com
+`@Entity`, `@Table`, `@Column`, `@ManyToOne`, `@ManyToMany`, `@ElementCollection`, etc.
 
-### Front-end
+| Modelo | Tabela | Principais campos |
+| --- | --- | --- |
+| `Ong` | `ongs` | `id`, `nome`, `descricao`, `chavePix`, `tipoChavePix`, `telefone`, `endereco` |
+| `Usuario` | `usuarios` | `id`, `nome`, `email`, `perfil` |
+| `Animal` | `animais` | `id`, `nome`, `especie`, `idade`, `descricao`, `status`, `meta`, `mensalidadeSugerida` |
+| `Doacao` | `doacoes` | `id`, `animal`, `perfil`, `padrinho`, `doadorNome`, `valor`, `data`, `status` |
 
-O front-end é uma SPA (Single Page Application) em JavaScript puro, dividida em:
+Tabelas auxiliares geradas pelas relações:
+
+| Tabela | Origem |
+| --- | --- |
+| `animal_necessidades` | `@ElementCollection` da lista `necessidades` do `Animal` (`animal_id`, `necessidade`, `ordem`) |
+| `animal_padrinhos` | `@ManyToMany` entre `Animal` e `Usuario` (`animal_id`, `usuario_id`) |
+
+Relacionamentos:
+
+- `Doacao.animal` → `@ManyToOne` para `Animal` (`doacoes.animal_id`).
+- `Doacao.padrinho` → `@ManyToOne` opcional para `Usuario` (`doacoes.padrinho_id`).
+- `Animal.padrinhos` → `@ManyToMany` com `Usuario` (tabela `animal_padrinhos`).
+- `Usuario.afilhados` → lado inverso de `Animal.padrinhos`.
+- `Usuario.doacoes` → lado inverso de `Doacao.padrinho`.
+
+Enums usados e serializados como texto no banco (`@Enumerated(EnumType.STRING)`):
+
+| Enum | Valores |
+| --- | --- |
+| `StatusAnimal` | `ATIVO`, `INATIVO` |
+| `StatusDoacao` | `DOADO`, `CANCELADA` |
+| `PerfilUsuario` | `ADM`, `USUARIO`, `PADRINHO` |
+| `TipoChavePix` | `CPF_CNPJ`, `EMAIL`, `TELEFONE`, `CHAVE_ALEATORIA` |
+
+O `TipoChavePix` mantém no JSON os rótulos usados pelo front-end (`"CPF/CNPJ"`, `"E-mail"`,
+`"Telefone"`, `"Chave aleatória"`) por meio de `@JsonValue` e `@JsonCreator`.
+
+Detalhes importantes do mapeamento:
+
+- valores monetários usam `BigDecimal` (`precision = 12, scale = 2`);
+- `Doacao.data` usa `Instant` e é preenchida automaticamente no `@PrePersist` quando não enviada;
+- `Animal.necessidades` é uma coleção de strings com ordem preservada;
+- `Doacao` e `Animal` usam `fetch = LAZY` nas relações, por isso o futuro controller deve usar
+  DTOs e/ou transações para evitar `LazyInitializationException`.
+
+### Repositórios Spring Data JPA
+
+Ficam em `src/main/java/br/com/ongs/atividadeongs/repository/`:
+
+| Repositório | Métodos personalizados |
+| --- | --- |
+| `AnimalRepository` | `findByStatusOrderByNomeAsc`, `findByNomeContainingIgnoreCase` |
+| `DoacaoRepository` | `findByAnimalIdOrderByDataDesc`, `findByPadrinhoIdOrderByDataDesc`, `findByStatus` |
+| `OngRepository` | `findFirstByOrderByIdAsc` |
+| `UsuarioRepository` | `findByEmailIgnoreCase`, `findByPerfil` |
+
+Todos herdam de `JpaRepository<T, Long>`, portanto já possuem `save`, `findAll`, `findById`,
+`delete`, etc. **Os controllers atuais ainda não usam esses repositórios.**
+
+### Controllers (stubs)
+
+Os endpoints necessários para o front-end já existem, mas estão **sem implementação**.
+Eles não acessam service, repositório nem banco.
+
+| Método | Endpoint | Resposta atual |
+| --- | --- | --- |
+| `GET` | `/api/status` | `200` com mensagem de status |
+| `GET` | `/api/ong` | `200 {}` |
+| `PUT` | `/api/ong` | `204 No Content` |
+| `GET` | `/api/usuarios` | `200 {"padrinhoAtual":{}}` |
+| `GET` | `/api/animais` | `200 []` |
+| `GET` | `/api/animais/{id}` | `204 No Content` |
+| `POST` | `/api/animais` | `204 No Content` |
+| `PATCH` | `/api/animais/{id}/status` | `204 No Content` |
+| `GET` | `/api/doacoes` | `200 []` |
+| `POST` | `/api/doacoes` | `204 No Content` |
+
+Os métodos estão marcados com `// TODO: implementar` e recebem o corpo como `Map<String, Object>`
+para não acoplar o stub a DTOs que ainda serão criados.
+
+---
+
+## Banco de dados PostgreSQL
+
+### Como o banco é criado
+
+O Hibernate **não cria o banco de dados**. Ele cria e atualiza as tabelas dentro de um banco que
+já precisa existir no PostgreSQL.
+
+O fluxo é:
+
+1. Criar o banco `atividade_ongs` manualmente no PostgreSQL.
+2. Configurar URL, usuário e senha em `application.properties`.
+3. Subir a aplicação.
+4. Com `spring.jpa.hibernate.ddl-auto=update`, o Hibernate lê as entidades e cria/atualiza as
+   tabelas, chaves estrangeiras e tabelas auxiliares.
+
+Criando o banco pelo `psql` (Windows):
+
+```powershell
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -c "CREATE DATABASE atividade_ongs;"
+```
+
+> Ajuste o caminho `18` para a versão do PostgreSQL instalada na sua máquina.
+
+Ou pelo pgAdmin: **Databases → Create → Database**, nome `atividade_ongs`.
+
+Alternativa com Docker:
+
+```powershell
+docker run --name postgres-ongs -e POSTGRES_PASSWORD=admin -e POSTGRES_DB=atividade_ongs -p 5432:5432 -d postgres:18
+```
+
+### Tabelas geradas
+
+Com o mapeamento atual, o Hibernate cria:
+
+```text
+ongs
+usuarios
+animais
+animal_necessidades
+animal_padrinhos
+doacoes
+```
+
+Conferindo pelo `psql`:
+
+```powershell
+$env:PGPASSWORD = "admin"
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -h localhost -U postgres -d atividade_ongs -c "\dt"
+```
+
+### Configuração atual
+
+Arquivo `src/main/resources/application.properties`:
+
+```properties
+spring.application.name=atividade-ongs
+
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/atividade_ongs}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:admin}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=false
+```
+
+As variáveis de ambiente podem sobrescrever os valores padrão:
+
+| Variável | Padrão no projeto | Uso |
+| --- | --- | --- |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/atividade_ongs` | URL JDBC |
+| `DB_USER` | `postgres` | Usuário do PostgreSQL |
+| `DB_PASSWORD` | `admin` | Senha do PostgreSQL |
+
+Exemplo no PowerShell:
+
+```powershell
+$env:DB_USER = "postgres"
+$env:DB_PASSWORD = "admin"
+.\mvnw.cmd spring-boot:run
+```
+
+> **Atenção:** o usuário padrão criado pelo instalador do PostgreSQL é `postgres`.
+> `admin` no exemplo acima é apenas a senha local usada no desenvolvimento. Ajuste conforme a
+> sua instalação.
+
+### `ddl-auto`
+
+| Valor | Comportamento |
+| --- | --- |
+| `update` | Cria/atualiza tabelas e colunas que faltam. Usado no desenvolvimento. |
+| `validate` | Apenas valida se o schema está igual às entidades. Não altera nada. |
+| `create` | Recria as tabelas a cada inicialização. |
+| `create-drop` | Cria ao subir e apaga ao parar. |
+| `none` | Não faz nada. |
+
+Para produção, o recomendado é usar `validate` e versionar o schema com **Flyway** ou
+**Liquibase**. O `update` é prático no início, mas não é adequado para evoluções controladas.
+
+---
+
+## Front-end
+
+O front-end é uma SPA em JavaScript puro, dividida em:
 
 - **`index.html`**: estrutura base, cabeçalho fixo, área `#app`, modal e toasts;
 - **`app.js`**: roteamento por hash e controle do perfil ativo;
@@ -120,33 +345,27 @@ O front-end é uma SPA (Single Page Application) em JavaScript puro, dividida em
 - **`components.js`**: componentes reutilizáveis (card de animal, barra de progresso, modal,
   confirmação e toast);
 - **`api.js`**: camada que concentra toda a comunicação de dados;
-- **`mock.js`** e **`data/`**: simulação do back-end.
+- **`config.js`**: configuração da URL da API e da chave `USE_MOCK`.
 
----
+### Configuração atual
 
-## Como funciona o front-end (modo mock)
+Arquivo `src/main/resources/static/js/config.js`:
 
-Como o back-end ainda não existe, o front-end **simula a API**:
+```js
+export const CONFIG = {
+  USE_MOCK: false,
+  MOCK_DIR: 'data',
+  BASE_URL: '/api'
+};
+```
 
-1. O arquivo `js/config.js` define:
-   ```js
-   export const CONFIG = {
-     USE_MOCK: true,
-     MOCK_DIR: 'data',
-     BASE_URL: '/api'
-   };
-   ```
-2. Com `USE_MOCK: true`, o `js/api.js` lê os arquivos de `static/data/` via `fetch`
-   (`ong.json`, `animais.json`, `doacoes.json`, `usuarios.json`).
-3. As ações que alteram dados (doar, cadastrar animal, inativar animal, editar a ONG) são gravadas
-   em um overlay no `localStorage`, na chave `ong_mock_mutacoes_v1`. Na leitura, esse overlay é
-   mesclado com os JSON originais.
-4. O perfil escolhido é salvo em `localStorage` na chave `ong_perfil_ativo`.
-5. O botão **"Resetar dados da demonstração"** (na tela de seleção de perfil) apaga o overlay e
-   volta aos dados originais.
+Com `USE_MOCK: false`, o `api.js` chama a API real em `/api/...`. Os arquivos `mock.js` e
+`static/data/*.json` continuam no projeto como referência histórica, mas não são mais usados
+para carregar os dados.
 
-As views **nunca** acessam os JSON diretamente: todo acesso passa por `js/api.js`. Isso permite
-trocar o mock pela API real alterando apenas a configuração e implementando os endpoints.
+A tela de seleção de perfil ainda exibe o botão **"Resetar dados da demonstração"**, que limpa
+apenas o overlay antigo do `localStorage`. Como o modo mock está desligado, esse botão não
+altera os dados da API.
 
 ### Rotas (hash)
 
@@ -157,30 +376,31 @@ trocar o mock pela API real alterando apenas a configuração e implementando os
 | `#/usuario` | Área do doador |
 | `#/padrinho` | Área do padrinho |
 
-### Regras de negócio já refletidas no front
+### O que o front espera da API
 
-- A porcentagem de cada animal é calculada como `arrecadado / meta`, limitada a 100%.
-- `arrecadado` é a soma das doações do animal com status diferente de `CANCELADA`.
-- O botão de inativação fica **desabilitado** enquanto a meta não for atingida.
-- A doação exige valor maior que zero e só aparece para animais com status `ATIVO`.
-- Doações, cadastros e inativações refletem imediatamente na interface (estado otimista).
+Como os controllers ainda retornam respostas vazias, as telas exibem listas vazias e alguns
+valores indefinidos (por exemplo, nome da ONG e nome do padrinho). Isso é esperado até a
+implementação dos endpoints.
 
-### Modelo dos dados mockados
+Quando forem implementados, o contrato esperado é:
 
 **Animal**
 
 ```json
 {
-  "id": "animal-1",
+  "id": 1,
   "nome": "Mel",
   "especie": "Cachorro",
   "idade": "3 anos",
   "descricao": "Resgatada em situação de rua...",
   "status": "ATIVO",
-  "meta": 1200,
+  "meta": 1200.00,
   "necessidades": ["Ração hipoalergênica", "Consultas dermatológicas"],
-  "padrinhoIds": ["padrinho-1"],
-  "mensalidadeSugerida": 60
+  "padrinhoIds": [1],
+  "mensalidadeSugerida": 60.00,
+  "arrecadado": 860.00,
+  "percentual": 72,
+  "metaAtingida": false
 }
 ```
 
@@ -188,13 +408,13 @@ trocar o mock pela API real alterando apenas a configuração e implementando os
 
 ```json
 {
-  "id": "doacao-1",
-  "animalId": "animal-1",
-  "perfil": "USUARIO",
-  "padrinhoId": null,
-  "doadorNome": "Ana Souza",
-  "valor": 500,
-  "data": "2026-09-12T14:20:00.000Z",
+  "id": 1,
+  "animalId": 1,
+  "perfil": "PADRINHO",
+  "padrinhoId": 1,
+  "doadorNome": "Carlos Andrade",
+  "valor": 60.00,
+  "data": "2026-10-05T11:00:00Z",
   "status": "DOADO"
 }
 ```
@@ -203,7 +423,7 @@ trocar o mock pela API real alterando apenas a configuração e implementando os
 
 ```json
 {
-  "id": "ong-1",
+  "id": 1,
   "nome": "Patas Felizes",
   "descricao": "ONG dedicada ao resgate...",
   "chavePix": "contato@patasfelizes.org.br",
@@ -213,31 +433,44 @@ trocar o mock pela API real alterando apenas a configuração e implementando os
 }
 ```
 
+**Usuários**
+
+O front lê `usuarios.padrinhoAtual`, então o endpoint precisa retornar:
+
+```json
+{
+  "padrinhoAtual": {
+    "id": 1,
+    "nome": "Carlos Andrade",
+    "email": "carlos.andrade@email.com"
+  }
+}
+```
+
+### Regras que ainda estão no front-end
+
+- `arrecadado` é a soma das doações do animal com status diferente de `CANCELADA`.
+- `percentual` é `arrecadado / meta`, limitado a 100%.
+- `metaAtingida` é `arrecadado >= meta`.
+- O botão de inativação fica desabilitado enquanto a meta não for atingida.
+- Ao criar doação, o front envia `animalId`, `perfil`, `padrinhoId`, `doadorNome` e `valor`.
+- Ao criar animal, o front envia `status: "ATIVO"`, `padrinhoIds: []` e
+  `mensalidadeSugerida: 50` por padrão.
+
+Essas regras devem migrar para os services do back-end.
+
 ---
 
 ## Como rodar
 
-Pré-requisitos: **JDK 21 ou superior** e o projeto aberto no IntelliJ IDEA (ou uso do Maven Wrapper
-no terminal).
+### Pré-requisitos
 
-### Pelo IntelliJ IDEA
-
-1. Abra a pasta do projeto (`File → Open` e selecione `atividade_ongs`).
-2. Aguarde o **sync do Maven** (necessário para baixar as dependências, inclusive o Tomcat).
-3. Abra `src/main/java/com/ongs/atividade_ongs/AtividadeOngsApplication.java`.
-4. Clique no **▶ verde** ao lado do método `main` e escolha **Run 'AtividadeOngsApplication'**.
-5. Quando o console exibir `Tomcat started on port 8080`, acesse:
-   **http://localhost:8080**
-
-Se aparecer erro de SDK, configure em `File → Project Structure → Project SDK` um JDK 21+.
+- JDK 21 ou superior (o projeto compila com target 21);
+- PostgreSQL instalado e em execução;
+- banco `atividade_ongs` criado;
+- credenciais configuradas em `application.properties` ou nas variáveis de ambiente.
 
 ### Pelo terminal
-
-```bash
-./mvnw spring-boot:run
-```
-
-No Windows (PowerShell/CMD):
 
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -245,60 +478,121 @@ No Windows (PowerShell/CMD):
 
 Depois acesse **http://localhost:8080**.
 
-### Observações
+Se a porta 8080 estiver ocupada, encerre a instância anterior (`Ctrl + C`) ou rode em outra porta:
 
-- O front-end **não deve ser aberto via `file://`**, pois o navegador bloqueia o `fetch` dos JSON.
-  Use sempre a aplicação Spring em `http://localhost:8080`.
-- Ao alterar arquivos em `src/main/resources/static/`, pare e execute novamente a aplicação para
-  ver as mudanças (ou adicione `spring-boot-devtools` para recarregar automaticamente).
-- Para gerar o pacote executável:
-  ```powershell
-  .\mvnw.cmd -DskipTests package
-  java -jar target/atividade_ongs-0.0.1-SNAPSHOT.jar
-  ```
+```powershell
+.\mvnw.cmd spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
+```
+
+### Pelo IntelliJ IDEA
+
+1. Abra a pasta do projeto.
+2. Aguarde o sync do Maven.
+3. Abra `src/main/java/br/com/ongs/atividadeongs/AtividadeOngsApplication.java`.
+4. Clique no ▶ verde ao lado do método `main`.
+5. Acesse **http://localhost:8080** quando o console exibir o Tomcat iniciado.
+
+### Verificando se subiu
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/status
+```
+
+Resposta esperada:
+
+```json
+{
+  "mensagem": "API do Sistema de ONGs funcionando!"
+}
+```
+
+### Gerando o pacote executável
+
+```powershell
+.\mvnw.cmd -DskipTests package
+java -jar target/atividade_ongs-0.0.1-SNAPSHOT.jar
+```
+
+> O front-end é servido a partir de `src/main/resources/static/`. Depois de alterar HTML, CSS ou
+> JavaScript, reinicie a aplicação para que os arquivos atualizados sejam copiados para
+> `target/classes/` (ou adicione `spring-boot-devtools` para recarregar automaticamente).
 
 ---
 
-## Migrando do mock para a API real
+## Como testar os endpoints atuais
 
-Quando o back-end estiver implementado:
+Os endpoints existem, mas retornam respostas vazias:
 
-1. Em `src/main/resources/static/js/config.js`, altere:
-   ```js
-   export const CONFIG = {
-     USE_MOCK: false,
-     MOCK_DIR: 'data',
-     BASE_URL: '/api'
-   };
-   ```
-2. Implemente no Spring os endpoints esperados por `js/api.js` (tabela abaixo).
-3. Como o front é servido pela mesma aplicação, não há necessidade de configurar CORS.
+```powershell
+Invoke-RestMethod http://localhost:8080/api/ong
+# {}
 
-### Endpoints esperados
+Invoke-RestMethod http://localhost:8080/api/usuarios
+# padrinhoAtual: {}
 
-| Método | Rota | Uso no front |
+Invoke-RestMethod http://localhost:8080/api/animais
+# lista vazia
+
+Invoke-RestMethod http://localhost:8080/api/doacoes
+# lista vazia
+```
+
+Para as rotas que retornam `204`:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/doacoes `
+  -ContentType "application/json" -Body '{}'
+
+Invoke-RestMethod -Method Put -Uri http://localhost:8080/api/ong `
+  -ContentType "application/json" -Body '{}'
+
+Invoke-RestMethod -Method Patch -Uri http://localhost:8080/api/animais/1/status `
+  -ContentType "application/json" -Body '{"status":"INATIVO"}'
+```
+
+### Problemas comuns
+
+| Erro | Causa provável | Solução |
 | --- | --- | --- |
-| `GET` | `/api/ong` | Carregar dados e chave PIX da ONG |
-| `PUT` | `/api/ong` | Salvar dados da ONG (perfil administrador) |
-| `GET` | `/api/usuarios` | Obter o padrinho atual para "meus afilhados" |
-| `GET` | `/api/animais` | Listar animais |
-| `POST` | `/api/animais` | Cadastrar animal |
-| `PATCH` | `/api/animais/{id}/status` | Inativar animal (body `{ "status": "INATIVO" }`) |
-| `GET` | `/api/doacoes` | Listar doações |
-| `POST` | `/api/doacoes` | Registrar doação |
+| `404` em `/api/animais`, `/api/ong`, etc. | Instância antiga da aplicação ainda rodando | Pare com `Ctrl + C` e suba novamente |
+| `28P01` / `password authentication failed` | Usuário ou senha incorretos | Use o usuário `postgres` e a senha definida na instalação |
+| `3D000` / `database ... does not exist` | Banco não criado | Execute `CREATE DATABASE atividade_ongs;` |
+| `Connection refused` | PostgreSQL parado | Inicie o serviço do PostgreSQL |
+| `permission denied for schema public` | Usuário sem permissão no schema | Use o dono do banco/superusuário em desenvolvimento |
+| Front com dados antigos | Cache do navegador ou instância antiga | Recarregue com `Ctrl + F5` e reinicie a aplicação |
 
-> Importante: em modo real, o front busca **`/api/animais` e `/api/doacoes`** e calcula
-> `arrecadado`, `percentual` e `metaAtingida` no cliente. Portanto, o back-end precisa fornecer os
-> campos `meta`, `status`, `necessidades`, `padrinhoIds` e `mensalidadeSugerida` em cada animal, e
-> `animalId`, `perfil`, `padrinhoId`, `doadorNome`, `valor`, `data` e `status` em cada doação.
+---
 
-Sugestão para o back-end:
+## Estado atual da feature de persistência
 
-- `PATCH /api/animais/{id}/status` deve recusar a inativação quando a meta não foi atingida,
-  devolvendo erro em JSON com a propriedade `mensagem` (o front exibe esse texto);
-- `POST /api/doacoes` deve gravar o status como `DOADO` e preencher `data` no servidor;
-- `GET /api/usuarios` pode ser substituído futuramente pela autenticação, retornando o padrinho
-  logado.
+### Já implementado
+
+- [x] Dependências `spring-boot-starter-data-jpa` e driver PostgreSQL no `pom.xml`.
+- [x] Configuração de conexão com PostgreSQL em `application.properties`.
+- [x] Hibernate configurado com `ddl-auto=update`.
+- [x] Modelos `Ong`, `Usuario`, `Animal` e `Doacao` mapeados com anotações JPA.
+- [x] Enums de status, perfil e tipo de chave PIX.
+- [x] Relacionamentos `@ManyToOne`, `@ManyToMany` e `@ElementCollection`.
+- [x] Repositórios Spring Data JPA.
+- [x] Controllers com todos os endpoints necessários (stubs).
+- [x] Front-end com `USE_MOCK: false`, chamando `/api/...`.
+- [x] Tabelas criadas automaticamente pelo Hibernate no PostgreSQL.
+
+### Ainda falta implementar
+
+- [ ] DTOs de request/response.
+- [ ] Services com as regras de negócio.
+- [ ] Uso dos repositórios pelos controllers.
+- [ ] Cálculo de `arrecadado`, `percentual` e `metaAtingida` no back-end.
+- [ ] Validação da inativação apenas com meta atingida.
+- [ ] Criação de doação com `data` e `status` definidos no servidor.
+- [ ] Tratamento global de erros com a propriedade `mensagem`.
+- [ ] Validações de entrada (`jakarta.validation`).
+- [ ] Dados iniciais/seed (opcional).
+- [ ] Migrações com Flyway ou Liquibase.
+- [ ] Testes automatizados.
+- [ ] Autenticação e autorização.
+- [ ] Integração real de pagamento.
 
 ---
 
@@ -306,18 +600,23 @@ Sugestão para o back-end:
 
 - Sem autenticação, login ou controle real de acesso: o perfil é apenas uma escolha no navegador.
 - Sem integração de pagamento: o PIX é apenas informativo e a doação é marcada manualmente.
-- Sem persistência em banco: os dados alterados ficam no `localStorage` do navegador.
+- Persistência configurada, mas **os endpoints ainda não leem nem gravam no banco**.
 - Sem validações de back-end: as validações existentes são apenas no front-end.
-- Dados fictícios, adequados apenas para demonstração.
+- Sem dados iniciais no banco.
+- Sem testes automatizados no momento.
 
 ---
 
-## Próximos passos sugeridos (back-end)
+## Próximos passos sugeridos
 
-1. Modelar as entidades `Ong`, `Animal`, `Necessidade`, `Doacao`, `Usuario`/`Padrinho`.
-2. Criar as camadas `controller`, `service`, `repository`, `domain` e `dto`, organizadas por domínio.
-3. Implementar a regra de inativação: somente animais com meta atingida podem ser inativados e
-   animais inativos não devem aceitar novas doações.
-4. Configurar banco PostgreSQL e migrações com Flyway.
-5. Implementar os endpoints da tabela acima e então desligar o modo mock (`USE_MOCK: false`).
-6. Evoluir para autenticação e, futuramente, integração real de pagamento.
+1. Criar DTOs de resposta e request para os quatro domínios.
+2. Implementar os services com as regras de negócio.
+3. Ligar os controllers aos services/repositórios.
+4. Implementar primeiro os endpoints de leitura (`GET /api/ong`, `/api/animais`,
+   `/api/doacoes`, `/api/usuarios`).
+5. Implementar os endpoints de escrita (`POST`, `PUT`, `PATCH`).
+6. Adicionar validação de entrada e tratamento global de erros.
+7. Popular o banco com dados iniciais (se desejado) ou criar um script de seed.
+8. Trocar `ddl-auto=update` por `validate` e adicionar Flyway/Liquibase.
+9. Criar testes de integração com `@DataJpaTest` e testes de controller.
+10. Evoluir para autenticação e, futuramente, integração real de pagamento.
