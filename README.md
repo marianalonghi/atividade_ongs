@@ -6,10 +6,12 @@ Aplicação web para auxiliar ONGs, abrigos e protetores independentes na gestã
 necessidades, padrinhos e doações.
 
 > **Status atual:** o back-end já possui **Spring Data JPA + Hibernate + PostgreSQL**
-> configurados, modelos mapeados, repositórios e controllers de API. O front-end estático é
-> servido pela própria aplicação e **já está com os mocks desativados** (`USE_MOCK: false`).
+> configurados, modelos mapeados, repositórios e controllers de API.
 > Os controllers ainda são **stubs**: os endpoints existem, mas retornam respostas vazias e não
 > acessam o banco. Não há dados cadastrados nem regras de negócio implementadas no back-end.
+>
+> O front-end foi movido para um projeto separado (`atividade_ongs-frontend`) e não faz mais
+> parte deste repositório.
 
 ---
 
@@ -36,15 +38,15 @@ Para simplificar o MVP:
 
 ## Arquitetura
 
-**Arquitetura adotada: monolito modular com Spring Boot + Java 21, servindo o front-end estático.**
+**Arquitetura adotada: API REST com Spring Boot + Java 21.**
 
-O front-end está em `src/main/resources/static/`, portanto é servido pela própria aplicação.
-Ao rodar o Spring Boot, `http://localhost:8080` já entrega o sistema.
+Este repositório contém apenas o back-end. O front-end (SPA em JavaScript puro) está no
+projeto separado `atividade_ongs-frontend` e consome a API em `/api/...`.
 
 Fluxo atual:
 
 ```text
-Front-end (JS puro, USE_MOCK: false)
+Front-end (projeto atividade_ongs-frontend, JS puro, USE_MOCK: false)
         │
         │ fetch /api/...
         ▼
@@ -81,7 +83,7 @@ Essa escolha é adequada ao MVP porque:
 | PostgreSQL | 18 (testado localmente) |
 | Driver PostgreSQL | 42.7.14 |
 | Maven | Maven Wrapper (`mvnw` / `mvnw.cmd`) |
-| Front-end | HTML5, CSS3 e JavaScript puro (ES Modules), sem framework e sem build |
+| Front-end | Projeto separado `atividade_ongs-frontend` (HTML5, CSS3 e JavaScript puro) |
 
 ---
 
@@ -117,28 +119,7 @@ atividade_ongs/
     │   │       ├── OngRepository.java
     │   │       └── UsuarioRepository.java
     │   └── resources/
-    │       ├── application.properties
-    │       └── static/
-    │           ├── index.html
-    │           ├── css/styles.css
-    │           ├── data/                  # JSONs do antigo modo mock
-    │           │   ├── animais.json
-    │           │   ├── doacoes.json
-    │           │   ├── ong.json
-    │           │   └── usuarios.json
-    │           └── js/
-    │               ├── api.js
-    │               ├── app.js
-    │               ├── components.js
-    │               ├── config.js
-    │               ├── doacao-modal.js
-    │               ├── mock.js
-    │               ├── state.js
-    │               └── views/
-    │                   ├── adm.js
-    │                   ├── padrinho.js
-    │                   ├── perfil.js
-    │                   └── usuario.js
+    │       └── application.properties
     └── test/
         └── java/                          # sem testes automatizados no momento
 ```
@@ -335,46 +316,18 @@ Para produção, o recomendado é usar `validate` e versionar o schema com **Fly
 
 ---
 
-## Front-end
+## Front-end (projeto separado)
 
-O front-end é uma SPA em JavaScript puro, dividida em:
+O front-end é uma SPA em JavaScript puro e está no projeto separado
+`atividade_ongs-frontend`. Para rodá-lo:
 
-- **`index.html`**: estrutura base, cabeçalho fixo, área `#app`, modal e toasts;
-- **`app.js`**: roteamento por hash e controle do perfil ativo;
-- **`views/`**: uma view por perfil;
-- **`components.js`**: componentes reutilizáveis (card de animal, barra de progresso, modal,
-  confirmação e toast);
-- **`api.js`**: camada que concentra toda a comunicação de dados;
-- **`config.js`**: configuração da URL da API e da chave `USE_MOCK`.
-
-### Configuração atual
-
-Arquivo `src/main/resources/static/js/config.js`:
-
-```js
-export const CONFIG = {
-  USE_MOCK: false,
-  MOCK_DIR: 'data',
-  BASE_URL: '/api'
-};
+```powershell
+cd ..\atividade_ongs-frontend
+node server.mjs
 ```
 
-Com `USE_MOCK: false`, o `api.js` chama a API real em `/api/...`. Os arquivos `mock.js` e
-`static/data/*.json` continuam no projeto como referência histórica, mas não são mais usados
-para carregar os dados.
-
-A tela de seleção de perfil ainda exibe o botão **"Resetar dados da demonstração"**, que limpa
-apenas o overlay antigo do `localStorage`. Como o modo mock está desligado, esse botão não
-altera os dados da API.
-
-### Rotas (hash)
-
-| Rota | Tela |
-| --- | --- |
-| `#/` | Seleção de perfil |
-| `#/adm` | Painel da ONG (administrador) |
-| `#/usuario` | Área do doador |
-| `#/padrinho` | Área do padrinho |
+O servidor de desenvolvimento entrega o front em `http://localhost:3000` e encaminha
+`/api/...` para este back-end em `http://localhost:8080`. Detalhes no README daquele projeto.
 
 ### O que o front espera da API
 
@@ -476,7 +429,7 @@ Essas regras devem migrar para os services do back-end.
 .\mvnw.cmd spring-boot:run
 ```
 
-Depois acesse **http://localhost:8080**.
+Depois a API estará em **http://localhost:8080**.
 
 Se a porta 8080 estiver ocupada, encerre a instância anterior (`Ctrl + C`) ou rode em outra porta:
 
@@ -490,7 +443,7 @@ Se a porta 8080 estiver ocupada, encerre a instância anterior (`Ctrl + C`) ou r
 2. Aguarde o sync do Maven.
 3. Abra `src/main/java/br/com/ongs/atividadeongs/AtividadeOngsApplication.java`.
 4. Clique no ▶ verde ao lado do método `main`.
-5. Acesse **http://localhost:8080** quando o console exibir o Tomcat iniciado.
+5. A API estará em **http://localhost:8080** quando o console exibir o Tomcat iniciado.
 
 ### Verificando se subiu
 
@@ -513,9 +466,8 @@ Resposta esperada:
 java -jar target/atividade_ongs-0.0.1-SNAPSHOT.jar
 ```
 
-> O front-end é servido a partir de `src/main/resources/static/`. Depois de alterar HTML, CSS ou
-> JavaScript, reinicie a aplicação para que os arquivos atualizados sejam copiados para
-> `target/classes/` (ou adicione `spring-boot-devtools` para recarregar automaticamente).
+> O front-end não é mais servido por esta aplicação. Para usá-lo, rode o projeto
+> `atividade_ongs-frontend` (`node server.mjs`) e acesse `http://localhost:3000`.
 
 ---
 
@@ -575,7 +527,7 @@ Invoke-RestMethod -Method Patch -Uri http://localhost:8080/api/animais/1/status 
 - [x] Relacionamentos `@ManyToOne`, `@ManyToMany` e `@ElementCollection`.
 - [x] Repositórios Spring Data JPA.
 - [x] Controllers com todos os endpoints necessários (stubs).
-- [x] Front-end com `USE_MOCK: false`, chamando `/api/...`.
+- [x] Front-end separado (`atividade_ongs-frontend`) com `USE_MOCK: false`, chamando `/api/...`.
 - [x] Tabelas criadas automaticamente pelo Hibernate no PostgreSQL.
 
 ### Ainda falta implementar
